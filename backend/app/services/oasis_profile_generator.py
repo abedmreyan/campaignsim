@@ -166,16 +166,17 @@ class OasisProfileGenerator:
         "Canada", "Australia", "Brazil", "India", "South Korea"
     ]
     
-    # 个人类型实体（需要生成具体人设）
+    # Individual entity types — generate a customer persona profile
     INDIVIDUAL_ENTITY_TYPES = [
-        "student", "alumni", "professor", "person", "publicfigure", 
-        "expert", "faculty", "official", "journalist", "activist"
+        "customerpersona", "person", "influencer", "consumer", "buyer",
+        "user", "shopper", "subscriber", "prospect"
     ]
-    
-    # 群体/机构类型实体（需要生成群体代表人设）
+
+    # Group / institutional entity types — generate a brand account profile
     GROUP_ENTITY_TYPES = [
-        "university", "governmentagency", "organization", "ngo", 
-        "mediaoutlet", "company", "institution", "group", "community"
+        "brand", "competitor", "marketingchannel", "organization",
+        "mediaoutlet", "retailer", "agency", "market", "contentformat",
+        "campaign", "product"
     ]
     
     def __init__(
@@ -670,10 +671,16 @@ class OasisProfileGenerator:
         }
     
     def _get_system_prompt(self, is_individual: bool) -> str:
-        """获取系统提示词"""
-        base_prompt = "你是社交媒体用户画像生成专家。生成详细、真实的人设用于舆论模拟,最大程度还原已有现实情况。必须返回有效的JSON格式，所有字符串值不能包含未转义的换行符。"
-        return f"{base_prompt}\n\n{get_language_instruction()}"
-    
+        """Return system prompt for persona generation."""
+        if is_individual:
+            return ("You are a marketing customer persona generation expert. "
+                    "Generate detailed, realistic customer persona profiles for marketing campaign simulation. "
+                    "Return only valid JSON. All string values must not contain unescaped newlines.")
+        else:
+            return ("You are a marketing brand account profile generation expert. "
+                    "Generate detailed brand and channel account profiles for marketing campaign simulation. "
+                    "Return only valid JSON. All string values must not contain unescaped newlines.")
+
     def _build_individual_persona_prompt(
         self,
         entity_name: str,
@@ -682,45 +689,44 @@ class OasisProfileGenerator:
         entity_attributes: Dict[str, Any],
         context: str
     ) -> str:
-        """构建个人实体的详细人设提示词"""
-        
-        attrs_str = json.dumps(entity_attributes, ensure_ascii=False) if entity_attributes else "无"
-        context_str = context[:3000] if context else "无额外上下文"
-        
-        return f"""为实体生成详细的社交媒体用户人设,最大程度还原已有现实情况。
+        """Build the prompt for generating a customer persona agent profile."""
+        attrs_str = json.dumps(entity_attributes, ensure_ascii=False) if entity_attributes else "none"
+        context_str = context[:3000] if context else "No additional context"
 
-实体名称: {entity_name}
-实体类型: {entity_type}
-实体摘要: {entity_summary}
-实体属性: {attrs_str}
+        return f"""Generate a detailed customer persona profile for use in a marketing campaign simulation.
 
-上下文信息:
+Entity name: {entity_name}
+Entity type: {entity_type}
+Entity summary: {entity_summary}
+Entity attributes: {attrs_str}
+
+Context from brand knowledge graph:
 {context_str}
 
-请生成JSON，包含以下字段:
+Return JSON with these exact fields:
 
-1. bio: 社交媒体简介，200字
-2. persona: 详细人设描述（2000字的纯文本），需包含:
-   - 基本信息（年龄、职业、教育背景、所在地）
-   - 人物背景（重要经历、与事件的关联、社会关系）
-   - 性格特征（MBTI类型、核心性格、情绪表达方式）
-   - 社交媒体行为（发帖频率、内容偏好、互动风格、语言特点）
-   - 立场观点（对话题的态度、可能被激怒/感动的内容）
-   - 独特特征（口头禅、特殊经历、个人爱好）
-   - 个人记忆（人设的重要部分，要介绍这个个体与事件的关联，以及这个个体在事件中的已有动作与反应）
-3. age: 年龄数字（必须是整数）
-4. gender: 性别，必须是英文: "male" 或 "female"
-5. mbti: MBTI类型（如INTJ、ENFP等）
-6. country: 国家（使用中文，如"中国"）
-7. profession: 职业
-8. interested_topics: 感兴趣话题数组
+1. bio: 200-character social media bio this persona would write about themselves
+2. persona: Detailed 1500-word profile (plain text, NO newlines) covering:
+   - Demographics (age, gender, location, income bracket, education level)
+   - Psychographics (values, lifestyle, motivations, pain points)
+   - Buying behaviour (decision process, research habits, brand loyalty, price sensitivity)
+   - Channel behaviour (which platforms they use, how often, what content they engage with)
+   - Content preferences (video vs text vs image, long-form vs short, UGC vs branded)
+   - Response to advertising (ad-skipping habits, preferred ad formats, trusted voices)
+   - Relationship to the brand/product being marketed (aware, considers, loyal, lapsed)
+   - Memory (what this persona has already seen or done related to this campaign)
+3. age: integer (e.g. 28)
+4. gender: string — must be "male" or "female"
+5. mbti: MBTI type string (e.g. "ENFP")
+6. country: country name in English (e.g. "US")
+7. profession: job title or occupation
+8. interested_topics: array of topic strings this persona cares about
 
-重要:
-- 所有字段值必须是字符串或数字，不要使用换行符
-- persona必须是一段连贯的文字描述
-- {get_language_instruction()} (gender字段必须用英文male/female)
-- 内容要与实体信息保持一致
-- age必须是有效的整数，gender必须是"male"或"female"
+Rules:
+- All field values must be strings or numbers — no null, no embedded newlines
+- persona must be a single continuous paragraph
+- age must be a valid integer, gender must be "male" or "female"
+- Keep consistent with the entity attributes and context provided
 """
 
     def _build_group_persona_prompt(
@@ -731,45 +737,42 @@ class OasisProfileGenerator:
         entity_attributes: Dict[str, Any],
         context: str
     ) -> str:
-        """构建群体/机构实体的详细人设提示词"""
-        
-        attrs_str = json.dumps(entity_attributes, ensure_ascii=False) if entity_attributes else "无"
-        context_str = context[:3000] if context else "无额外上下文"
-        
-        return f"""为机构/群体实体生成详细的社交媒体账号设定,最大程度还原已有现实情况。
+        """Build the prompt for generating a brand / channel account profile."""
+        attrs_str = json.dumps(entity_attributes, ensure_ascii=False) if entity_attributes else "none"
+        context_str = context[:3000] if context else "No additional context"
 
-实体名称: {entity_name}
-实体类型: {entity_type}
-实体摘要: {entity_summary}
-实体属性: {attrs_str}
+        return f"""Generate a detailed brand or channel account profile for use in a marketing campaign simulation.
 
-上下文信息:
+Entity name: {entity_name}
+Entity type: {entity_type}
+Entity summary: {entity_summary}
+Entity attributes: {attrs_str}
+
+Context:
 {context_str}
 
-请生成JSON，包含以下字段:
+Return JSON with these exact fields:
 
-1. bio: 官方账号简介，200字，专业得体
-2. persona: 详细账号设定描述（2000字的纯文本），需包含:
-   - 机构基本信息（正式名称、机构性质、成立背景、主要职能）
-   - 账号定位（账号类型、目标受众、核心功能）
-   - 发言风格（语言特点、常用表达、禁忌话题）
-   - 发布内容特点（内容类型、发布频率、活跃时间段）
-   - 立场态度（对核心话题的官方立场、面对争议的处理方式）
-   - 特殊说明（代表的群体画像、运营习惯）
-   - 机构记忆（机构人设的重要部分，要介绍这个机构与事件的关联，以及这个机构在事件中的已有动作与反应）
-3. age: 固定填30（机构账号的虚拟年龄）
-4. gender: 固定填"other"（机构账号使用other表示非个人）
-5. mbti: MBTI类型，用于描述账号风格，如ISTJ代表严谨保守
-6. country: 国家（使用中文，如"中国"）
-7. profession: 机构职能描述
-8. interested_topics: 关注领域数组
+1. bio: 200-character official account bio (professional, on-brand)
+2. persona: Detailed 1500-word account profile (plain text, NO newlines) covering:
+   - Organisation overview (what they do, market position, brand voice)
+   - Account purpose (what this account publishes, target audience for its content)
+   - Content style (tone of voice, message pillars, visual identity cues)
+   - Posting behaviour (frequency, timing, content mix)
+   - Stance on campaign-relevant topics (how they respond to competitor moves, trends)
+   - Memory (what this brand/channel has already done in relation to this campaign)
+3. age: integer 0 (not applicable for brand/institutional accounts)
+4. gender: string "other" (institutional accounts are not individuals)
+5. mbti: MBTI string describing the brand personality (e.g. "ESTJ" for authoritative brands)
+6. country: country name in English (e.g. "US")
+7. profession: describe the organisation's function (e.g. "FMCG Brand", "Social Media Channel")
+8. interested_topics: array of topics this account posts about
 
-重要:
-- 所有字段值必须是字符串或数字，不允许null值
-- persona必须是一段连贯的文字描述，不要使用换行符
-- {get_language_instruction()} (gender字段必须用英文"other")
-- age必须是整数30，gender必须是字符串"other"
-- 机构账号发言要符合其身份定位"""
+Rules:
+- All values must be strings or numbers — no null, no embedded newlines
+- persona must be a single continuous paragraph
+- age must be integer 0, gender must be string "other"
+"""
     
     def _generate_profile_rule_based(
         self,
@@ -778,70 +781,102 @@ class OasisProfileGenerator:
         entity_summary: str,
         entity_attributes: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """使用规则生成基础人设"""
-        
-        # 根据实体类型生成不同的人设
-        entity_type_lower = entity_type.lower()
-        
-        if entity_type_lower in ["student", "alumni"]:
+        """Generate a baseline profile using rules (fallback when LLM is unavailable)."""
+        et = entity_type.lower()
+
+        if et in ["customerpersona", "person", "consumer", "buyer", "shopper", "prospect"]:
             return {
-                "bio": f"{entity_type} with interests in academics and social issues.",
-                "persona": f"{entity_name} is a {entity_type.lower()} who is actively engaged in academic and social discussions. They enjoy sharing perspectives and connecting with peers.",
-                "age": random.randint(18, 30),
+                "bio": f"Consumer interested in products like {entity_name}.",
+                "persona": (
+                    f"{entity_name} is a consumer who researches products carefully before buying, "
+                    "is active on social media, and responds well to authentic content. "
+                    "They are value-conscious but willing to pay a premium for quality products "
+                    "that fit their lifestyle."
+                ),
+                "age": random.randint(22, 45),
                 "gender": random.choice(["male", "female"]),
                 "mbti": random.choice(self.MBTI_TYPES),
-                "country": random.choice(self.COUNTRIES),
-                "profession": "Student",
-                "interested_topics": ["Education", "Social Issues", "Technology"],
+                "country": "US",
+                "profession": "Professional",
+                "interested_topics": ["Shopping", "Lifestyle", "Technology"],
             }
-        
-        elif entity_type_lower in ["publicfigure", "expert", "faculty"]:
+
+        elif et in ["influencer", "creator"]:
             return {
-                "bio": f"Expert and thought leader in their field.",
-                "persona": f"{entity_name} is a recognized {entity_type.lower()} who shares insights and opinions on important matters. They are known for their expertise and influence in public discourse.",
-                "age": random.randint(35, 60),
+                "bio": f"Content creator and opinion leader. Partnering with brands I believe in.",
+                "persona": (
+                    f"{entity_name} is a content creator with an engaged following. "
+                    "They are selective about brand partnerships and prioritise authenticity. "
+                    "Their audience trusts their recommendations on lifestyle, products, and trends."
+                ),
+                "age": random.randint(22, 35),
                 "gender": random.choice(["male", "female"]),
-                "mbti": random.choice(["ENTJ", "INTJ", "ENTP", "INTP"]),
-                "country": random.choice(self.COUNTRIES),
-                "profession": entity_attributes.get("occupation", "Expert"),
-                "interested_topics": ["Politics", "Economics", "Culture & Society"],
+                "mbti": random.choice(["ENFP", "ESFP", "ENFJ"]),
+                "country": "US",
+                "profession": "Content Creator",
+                "interested_topics": ["Content Creation", "Brand Partnerships", "Lifestyle"],
             }
-        
-        elif entity_type_lower in ["mediaoutlet", "socialmediaplatform"]:
-            return {
-                "bio": f"Official account for {entity_name}. News and updates.",
-                "persona": f"{entity_name} is a media entity that reports news and facilitates public discourse. The account shares timely updates and engages with the audience on current events.",
-                "age": 30,  # 机构虚拟年龄
-                "gender": "other",  # 机构使用other
-                "mbti": "ISTJ",  # 机构风格：严谨保守
-                "country": "中国",
-                "profession": "Media",
-                "interested_topics": ["General News", "Current Events", "Public Affairs"],
-            }
-        
-        elif entity_type_lower in ["university", "governmentagency", "ngo", "organization"]:
+
+        elif et in ["brand", "competitor"]:
             return {
                 "bio": f"Official account of {entity_name}.",
-                "persona": f"{entity_name} is an institutional entity that communicates official positions, announcements, and engages with stakeholders on relevant matters.",
-                "age": 30,  # 机构虚拟年龄
-                "gender": "other",  # 机构使用other
-                "mbti": "ISTJ",  # 机构风格：严谨保守
-                "country": "中国",
-                "profession": entity_type,
-                "interested_topics": ["Public Policy", "Community", "Official Announcements"],
+                "persona": (
+                    f"{entity_name} is a brand account that shares product news, engages with customers, "
+                    "and communicates brand values. The account maintains a consistent brand voice and "
+                    "responds to customer feedback in a timely manner."
+                ),
+                "age": 0,
+                "gender": "other",
+                "mbti": "ESTJ",
+                "country": "US",
+                "profession": "Brand Account",
+                "interested_topics": ["Products", "Brand News", "Customer Engagement"],
             }
-        
+
+        elif et in ["marketingchannel"]:
+            return {
+                "bio": f"Official {entity_name} channel presence.",
+                "persona": (
+                    f"This is the {entity_name} channel representation. It reflects the norms and "
+                    "audience behaviour typical of this platform. Content here is optimised for the "
+                    "platform's algorithm and audience engagement patterns."
+                ),
+                "age": 0,
+                "gender": "other",
+                "mbti": "ISTP",
+                "country": "US",
+                "profession": "Marketing Channel",
+                "interested_topics": ["Digital Marketing", "Content", "Advertising"],
+            }
+
+        elif et in ["campaign", "product", "contentformat", "market"]:
+            return {
+                "bio": f"Campaign/product entity: {entity_name}.",
+                "persona": (
+                    f"{entity_name} is a {entity_type} participating in the campaign simulation. "
+                    f"{entity_summary or 'It represents a key component of the marketing strategy.'}"
+                ),
+                "age": 0,
+                "gender": "other",
+                "mbti": "ISTJ",
+                "country": "US",
+                "profession": entity_type,
+                "interested_topics": ["Marketing", "Advertising", "Business"],
+            }
+
         else:
-            # 默认人设
             return {
                 "bio": entity_summary[:150] if entity_summary else f"{entity_type}: {entity_name}",
-                "persona": entity_summary or f"{entity_name} is a {entity_type.lower()} participating in social discussions.",
+                "persona": (
+                    entity_summary or
+                    f"{entity_name} is a {entity_type} participating in the campaign simulation."
+                ),
                 "age": random.randint(25, 50),
                 "gender": random.choice(["male", "female"]),
                 "mbti": random.choice(self.MBTI_TYPES),
-                "country": random.choice(self.COUNTRIES),
+                "country": "US",
                 "profession": entity_type,
-                "interested_topics": ["General", "Social Issues"],
+                "interested_topics": ["Marketing", "Business"],
             }
     
     def set_graph_id(self, graph_id: str):
