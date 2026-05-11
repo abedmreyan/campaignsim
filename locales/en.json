@@ -305,7 +305,7 @@
     "moreFiles": "+{count} files",
     "noFiles": "No files",
     "loadingText": "Loading...",
-    "simRequirement": "Simulation Requirement",
+    "simRequirement": "Campaign Goal",
     "relatedFiles": "Related Files",
     "noRelatedFiles": "No related files",
     "replayTitle": "Simulation Replay",
