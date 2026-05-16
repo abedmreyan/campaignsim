@@ -5,7 +5,7 @@ import time
 from typing import Dict, Any, List, Optional, Set, Callable, TypeVar
 from dataclasses import dataclass, field
 
-from zep_cloud.client import Zep
+from .kg import KGClient
 
 from ..config import Config
 from ..utils.logger import get_logger
@@ -68,11 +68,7 @@ class ZepEntityReader:
     3. """
     
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or Config.ZEP_API_KEY
-        if not self.api_key:
-            raise ValueError("ZEP_API_KEY not configured")
-        
-        self.client = Zep(api_key=self.api_key)
+        self.client = KGClient(data_dir=Config.KG_DATA_DIR)
     
     def _call_with_retry(
         self, 

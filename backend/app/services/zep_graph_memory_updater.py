@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from queue import Queue, Empty
 
-from zep_cloud.client import Zep
+from .kg import KGClient
 
 from ..config import Config
 from ..utils.logger import get_logger
@@ -192,16 +192,11 @@ class ZepGraphMemoryUpdater:
     def __init__(self, graph_id: str, api_key: Optional[str] = None):
         """
         Args:
-            graph_id: Zep knowledge graph ID.
-            api_key: Zep API key (uses Config.ZEP_API_KEY if not provided).
+            graph_id: Knowledge graph ID.
+            api_key: Ignored (kept for API compatibility with callers).
         """
         self.graph_id = graph_id
-        self.api_key = api_key or Config.ZEP_API_KEY
-        
-        if not self.api_key:
-            raise ValueError("ZEP_API_KEY not configured")
-        
-        self.client = Zep(api_key=self.api_key)
+        self.client = KGClient(data_dir=Config.KG_DATA_DIR)
         
         self._activity_queue: Queue = Queue()
         

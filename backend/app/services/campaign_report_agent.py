@@ -19,7 +19,7 @@ import logging
 from typing import List, Dict, Any, Optional
 
 from openai import OpenAI
-from zep_cloud.client import Zep
+from .kg import KGClient
 
 from ..config import Config
 from ..services.campaign_tools import (
@@ -69,7 +69,7 @@ class CampaignReportAgent:
     def __init__(
         self,
         scored_variants: List[Dict[str, Any]],
-        zep_client: Optional[Zep] = None,
+        zep_client: Optional[KGClient] = None,
         graph_id: Optional[str] = None,
     ):
         self.scored_variants = scored_variants

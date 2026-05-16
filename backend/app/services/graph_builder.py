@@ -7,8 +7,7 @@ import threading
 from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass
 
-from zep_cloud.client import Zep
-from zep_cloud import EpisodeData, EntityEdgeSourceTarget
+from .kg import KGClient, EpisodeData, EntityEdgeSourceTarget
 
 from ..config import Config
 from ..models.task import TaskManager, TaskStatus
@@ -36,11 +35,7 @@ class GraphBuilderService:
     """    Zep API"""
     
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or Config.ZEP_API_KEY
-        if not self.api_key:
-            raise ValueError("ZEP_API_KEY not configured")
-        
-        self.client = Zep(api_key=self.api_key)
+        self.client = KGClient(data_dir=Config.KG_DATA_DIR)
         self.task_manager = TaskManager()
     
     def build_graph_async(
@@ -189,86 +184,13 @@ class GraphBuilderService:
     
     def set_ontology(self, graph_id: str, ontology: Dict[str, Any]):
         """..."""
-        import warnings
-        from typing import Optional
-        from pydantic import Field
-        from zep_cloud.external_clients.ontology import EntityModel, EntityText, EdgeModel
-        
-        #  Pydantic v2  Field(default=None)
-        #  Zep SDK
-        warnings.filterwarnings('ignore', category=UserWarning, module='pydantic')
-        
-        # Zep
-        RESERVED_NAMES = {'uuid', 'name', 'group_id', 'name_embedding', 'summary', 'created_at'}
-        
-        def safe_attr_name(attr_name: str) -> str:
-            """..."""
-            if attr_name.lower() in RESERVED_NAMES:
-                return f"entity_{attr_name}"
-            return attr_name
-        
-        entity_types = {}
-        for entity_def in ontology.get("entity_types", []):
-            name = entity_def["name"]
-            description = entity_def.get("description", f"A {name} entity.")
-            
-            # Pydantic v2
-            attrs = {"__doc__": description}
-            annotations = {}
-            
-            for attr_def in entity_def.get("attributes", []):
-                attr_name = safe_attr_name(attr_def["name"])
-                attr_desc = attr_def.get("description", attr_name)
-                # Zep API  Field  description
-                attrs[attr_name] = Field(description=attr_desc, default=None)
-                annotations[attr_name] = Optional[EntityText]
-            
-            attrs["__annotations__"] = annotations
-            
-            entity_class = type(name, (EntityModel,), attrs)
-            entity_class.__doc__ = description
-            entity_types[name] = entity_class
-        
-        edge_definitions = {}
-        for edge_def in ontology.get("edge_types", []):
-            name = edge_def["name"]
-            description = edge_def.get("description", f"A {name} relationship.")
-            
-            attrs = {"__doc__": description}
-            annotations = {}
-            
-            for attr_def in edge_def.get("attributes", []):
-                attr_name = safe_attr_name(attr_def["name"])
-                attr_desc = attr_def.get("description", attr_name)
-                # Zep API  Field  description
-                attrs[attr_name] = Field(description=attr_desc, default=None)
-                annotations[attr_name] = Optional[str]  # str
-            
-            attrs["__annotations__"] = annotations
-            
-            class_name = ''.join(word.capitalize() for word in name.split('_'))
-            edge_class = type(class_name, (EdgeModel,), attrs)
-            edge_class.__doc__ = description
-            
-            # source_targets
-            source_targets = []
-            for st in edge_def.get("source_targets", []):
-                source_targets.append(
-                    EntityEdgeSourceTarget(
-                        source=st.get("source", "Entity"),
-                        target=st.get("target", "Entity")
-                    )
-                )
-            
-            if source_targets:
-                edge_definitions[name] = (edge_class, source_targets)
-        
-        # Zep API
-        if entity_types or edge_definitions:
+        # Pass the raw ontology dict directly to the KGClient adapter,
+        # which normalises it and stores as JSON (no Pydantic class construction needed).
+        if ontology:
             self.client.graph.set_ontology(
                 graph_ids=[graph_id],
-                entities=entity_types if entity_types else None,
-                edges=edge_definitions if edge_definitions else None,
+                entities=ontology.get("entity_types", []),
+                edges=ontology.get("edge_types", []),
             )
     
     def add_text_batches(

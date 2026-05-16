@@ -3062,13 +3062,8 @@ def generate_campaign_recommendations():
                     message=f"Scored {len(scored)} variants. Generating recommendations...",
                 )
 
-                zep_client = None
-                if graph_id and Config.ZEP_API_KEY:
-                    try:
-                        from zep_cloud.client import Zep
-                        zep_client = Zep(api_key=Config.ZEP_API_KEY)
-                    except Exception as zep_err:
-                        logger.warning(f"Zep client init failed (brand context unavailable): {zep_err}")
+                from ..services.kg import KGClient as _KGClient
+                zep_client = _KGClient(data_dir=Config.KG_DATA_DIR) if graph_id else None
 
                 agent = CampaignReportAgent(
                     scored_variants=scored,

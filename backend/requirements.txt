@@ -12,8 +12,13 @@ flask-cors>=6.0.0
 # LLM (OpenAI-compatible API)
 openai>=1.0.0
 
-# Zep Cloud
-zep-cloud==3.13.0
+# Zep Cloud (only needed when KG_BACKEND=zep; comment out for local KG mode)
+# zep-cloud==3.13.0
+
+# Local Knowledge Graph engine dependencies
+numpy>=1.24.0
+scikit-learn>=1.3.0
+rank-bm25>=0.2.2
 
 # OASIS social simulation
 camel-oasis==0.2.5

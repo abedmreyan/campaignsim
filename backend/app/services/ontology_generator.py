@@ -350,7 +350,7 @@ Rules:
             '"""',
             '',
             'from pydantic import Field',
-            'from zep_cloud.external_clients.ontology import EntityModel, EntityText, EdgeModel',
+            'from app.services.kg.models import KGNode, KGEdge  # local KG engine',
             '',
             '',
             '# ============== Entity Type Definitions ==============',
