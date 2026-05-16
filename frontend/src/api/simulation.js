@@ -186,6 +186,14 @@ export const getSimulationHistory = (limit = 20) => {
 }
 
 /**
+ * Launch a multi-variant A/B campaign test.
+ * @param {Object} data - { simulation_id, brand_name, campaign_goal, variants }
+ */
+export const runAbTest = (data) => {
+  return service.post('/api/simulation/ab_test', data)
+}
+
+/**
  * Get the status of an A/B campaign test.
  * @param {string} campaignId
  */
