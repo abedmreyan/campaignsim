@@ -5,11 +5,11 @@
       <div class="header-left">
         <div class="brand" @click="router.push('/')">CAMPAIGNSIM</div>
       </div>
-      
+
       <div class="header-center">
         <div class="view-switcher">
-          <button 
-            v-for="mode in ['graph', 'split', 'workbench']" 
+          <button
+            v-for="mode in ['graph', 'split', 'workbench']"
             :key="mode"
             class="switch-btn"
             :class="{ active: viewMode === mode }"
@@ -24,8 +24,8 @@
         <LanguageSwitcher />
         <div class="step-divider"></div>
         <div class="workflow-step">
-          <span class="step-num">Step 5/5</span>
-          <span class="step-name">{{ $tm('main.stepNames')[4] }}</span>
+          <span class="step-num">Campaign</span>
+          <span class="step-name">Recommendations</span>
         </div>
         <div class="step-divider"></div>
         <span class="status-indicator" :class="statusClass">
@@ -39,22 +39,20 @@
     <main class="content-area">
       <!-- Left Panel: Graph -->
       <div class="panel-wrapper left" :style="leftPanelStyle">
-        <GraphPanel 
+        <GraphPanel
           :graphData="graphData"
           :loading="graphLoading"
-          :currentPhase="5"
+          :currentPhase="4"
           :isSimulating="false"
           @refresh="refreshGraph"
           @toggle-maximize="toggleMaximize('graph')"
         />
       </div>
 
-      <!-- Right Panel: Step5  -->
+      <!-- Right Panel: Campaign Report -->
       <div class="panel-wrapper right" :style="rightPanelStyle">
-        <Step5Interaction
-          :reportId="currentReportId"
-          :simulationId="simulationId"
-          :systemLogs="systemLogs"
+        <Step5CampaignReport
+          :campaignId="currentCampaignId"
           @add-log="addLog"
           @update-status="updateStatus"
         />
@@ -64,157 +62,105 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import GraphPanel from '../components/GraphPanel.vue'
-import Step5Interaction from '../components/Step5Interaction.vue'
-import { getProject, getGraphData } from '../api/graph'
-import { getSimulation } from '../api/simulation'
-import { getReport } from '../api/report'
+import Step5CampaignReport from '../components/Step5CampaignReport.vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import { getProject, getGraphData } from '../api/graph'
+import { getAbStatus } from '../api/simulation'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 
-// Props
 const props = defineProps({
-  reportId: String
+  campaignId: String
 })
 
-// Layout State - 
+// Layout
 const viewMode = ref('workbench')
 
-// Data State
-const currentReportId = ref(route.params.reportId)
-const simulationId = ref(null)
-const projectData = ref(null)
+// Data
+const currentCampaignId = ref(route.params.campaignId)
 const graphData = ref(null)
 const graphLoading = ref(false)
 const systemLogs = ref([])
-const currentStatus = ref('ready') // ready | processing | completed | error
+const currentStatus = ref('processing')
 
-// --- Computed Layout Styles ---
+// Layout computed
 const leftPanelStyle = computed(() => {
-  if (viewMode.value === 'graph') return { width: '100%', opacity: 1, transform: 'translateX(0)' }
+  if (viewMode.value === 'graph')     return { width: '100%', opacity: 1, transform: 'translateX(0)' }
   if (viewMode.value === 'workbench') return { width: '0%', opacity: 0, transform: 'translateX(-20px)' }
   return { width: '50%', opacity: 1, transform: 'translateX(0)' }
 })
 
 const rightPanelStyle = computed(() => {
   if (viewMode.value === 'workbench') return { width: '100%', opacity: 1, transform: 'translateX(0)' }
-  if (viewMode.value === 'graph') return { width: '0%', opacity: 0, transform: 'translateX(20px)' }
+  if (viewMode.value === 'graph')     return { width: '0%', opacity: 0, transform: 'translateX(20px)' }
   return { width: '50%', opacity: 1, transform: 'translateX(0)' }
 })
 
-// --- Status Computed ---
-const statusClass = computed(() => {
-  return currentStatus.value
-})
-
+const statusClass = computed(() => currentStatus.value)
 const statusText = computed(() => {
-  if (currentStatus.value === 'error') return 'Error'
-  if (currentStatus.value === 'completed') return 'Completed'
-  if (currentStatus.value === 'processing') return 'Processing'
-  return 'Ready'
+  if (currentStatus.value === 'error')     return 'Error'
+  if (currentStatus.value === 'completed') return 'Ready'
+  return 'Generating'
 })
 
-// --- Helpers ---
+// Helpers
 const addLog = (msg) => {
-  const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '.' + new Date().getMilliseconds().toString().padStart(3, '0')
+  const now = new Date()
+  const time = now.toLocaleTimeString('en-US', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0')
   systemLogs.value.push({ time, msg })
-  if (systemLogs.value.length > 200) {
-    systemLogs.value.shift()
-  }
+  if (systemLogs.value.length > 200) systemLogs.value.shift()
 }
 
 const updateStatus = (status) => {
   currentStatus.value = status
 }
 
-// --- Layout Methods ---
 const toggleMaximize = (target) => {
-  if (viewMode.value === target) {
-    viewMode.value = 'split'
-  } else {
-    viewMode.value = target
-  }
+  viewMode.value = viewMode.value === target ? 'split' : target
 }
 
-// --- Data Logic ---
-const loadReportData = async () => {
+// Load graph from campaign metadata
+const loadGraphForCampaign = async () => {
+  if (!currentCampaignId.value) return
   try {
-    addLog(t('log.loadReportData', { id: currentReportId.value }))
-
-    //  report  simulation_id
-    const reportRes = await getReport(currentReportId.value)
-    if (reportRes.success && reportRes.data) {
-      const reportData = reportRes.data
-      simulationId.value = reportData.simulation_id
-
-      if (simulationId.value) {
-        //  simulation 
-        const simRes = await getSimulation(simulationId.value)
-        if (simRes.success && simRes.data) {
-          const simData = simRes.data
-
-          //  project 
-          if (simData.project_id) {
-            const projRes = await getProject(simData.project_id)
-            if (projRes.success && projRes.data) {
-              projectData.value = projRes.data
-              addLog(t('log.projectLoadSuccess', { id: projRes.data.project_id }))
-
-              //  graph 
-              if (projRes.data.graph_id) {
-                await loadGraph(projRes.data.graph_id)
-              }
-            }
-          }
-        }
-      }
-    } else {
-      addLog(t('log.getReportInfoFailed', { error: reportRes.error || t('common.unknownError') }))
+    const res = await getAbStatus(currentCampaignId.value)
+    if (res.success && res.data) {
+      const graphId = res.data.graph_id
+      if (graphId) await loadGraph(graphId)
     }
-  } catch (err) {
-    addLog(t('log.loadException', { error: err.message }))
+  } catch {
+    // graph is optional — don't block on failure
   }
 }
 
 const loadGraph = async (graphId) => {
   graphLoading.value = true
-  
   try {
     const res = await getGraphData(graphId)
     if (res.success) {
       graphData.value = res.data
-      addLog(t('log.graphDataLoadSuccess'))
+      addLog('Graph data loaded.')
     }
   } catch (err) {
-    addLog(t('log.graphLoadFailed', { error: err.message }))
+    addLog(`Graph load failed: ${err.message}`)
   } finally {
     graphLoading.value = false
   }
 }
 
 const refreshGraph = () => {
-  if (projectData.value?.graph_id) {
-    loadGraph(projectData.value.graph_id)
-  }
+  loadGraphForCampaign()
 }
 
-// Watch route params
-watch(() => route.params.reportId, (newId) => {
-  if (newId && newId !== currentReportId.value) {
-    currentReportId.value = newId
-    loadReportData()
-  }
-}, { immediate: true })
-
 onMounted(() => {
-  addLog(t('log.interactionViewInit'))
-  loadReportData()
+  addLog(`Campaign report view initialised: ${currentCampaignId.value}`)
+  loadGraphForCampaign()
 })
 </script>
 
@@ -228,7 +174,6 @@ onMounted(() => {
   font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
 }
 
-/* Header */
 .app-header {
   height: 60px;
   border-bottom: 1px solid #EAEAEA;
@@ -241,18 +186,18 @@ onMounted(() => {
   position: relative;
 }
 
-.header-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 .brand {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 800;
   font-size: 18px;
   letter-spacing: 1px;
   cursor: pointer;
+}
+
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .view-switcher {
@@ -327,14 +272,12 @@ onMounted(() => {
   background: #CCC;
 }
 
-.status-indicator.ready .dot { background: #4CAF50; }
 .status-indicator.processing .dot { background: #FF9800; animation: pulse 1s infinite; }
-.status-indicator.completed .dot { background: #4CAF50; }
-.status-indicator.error .dot { background: #F44336; }
+.status-indicator.completed .dot  { background: #4CAF50; }
+.status-indicator.error .dot      { background: #F44336; }
 
 @keyframes pulse { 50% { opacity: 0.5; } }
 
-/* Content */
 .content-area {
   flex: 1;
   display: flex;
