@@ -7,7 +7,7 @@ import threading
 from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass
 
-from .kg import KGClient, EpisodeData, EntityEdgeSourceTarget
+from .kg import KGClient, EpisodeData
 
 from ..config import Config
 from ..models.task import TaskManager, TaskStatus

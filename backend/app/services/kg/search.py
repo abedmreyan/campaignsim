@@ -238,6 +238,3 @@ def _node_text(node: KGNode) -> str:
     parts = [node.name, node.summary]
     return " ".join(p for p in parts if p)
 
-
-# Type alias for type checker
-from typing import Dict
