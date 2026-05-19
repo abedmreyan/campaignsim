@@ -16,6 +16,7 @@ COPY frontend/package.json frontend/package-lock.json ./frontend/
 COPY backend/pyproject.toml ./backend/
 
 # Install Node and Python dependencies
+# torch is sourced from PyTorch CPU index (see pyproject.toml [tool.uv.sources])
 RUN npm ci \
   && npm ci --prefix frontend \
   && cd backend && uv sync
