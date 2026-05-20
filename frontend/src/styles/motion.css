@@ -1,0 +1,339 @@
+.step-fade-enter-active,
+.step-fade-leave-active,
+.view-enter-active,
+.view-leave-active {
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.step-fade-enter-from,
+.step-fade-leave-to,
+.view-enter-from,
+.view-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.view-enter-from,
+.view-leave-to {
+  transform: scale(0.98) translateY(6px);
+}
+
+.stagger-in > * {
+  animation: staggerFade 0.55s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.stagger-in > *:nth-child(1) {
+  animation-delay: 0.03s;
+}
+.stagger-in > *:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.stagger-in > *:nth-child(3) {
+  animation-delay: 0.09s;
+}
+.stagger-in > *:nth-child(4) {
+  animation-delay: 0.12s;
+}
+.stagger-in > *:nth-child(5) {
+  animation-delay: 0.15s;
+}
+.stagger-in > *:nth-child(6) {
+  animation-delay: 0.18s;
+}
+.stagger-in > *:nth-child(7) {
+  animation-delay: 0.21s;
+}
+.stagger-in > *:nth-child(8) {
+  animation-delay: 0.24s;
+}
+.stagger-in > *:nth-child(9) {
+  animation-delay: 0.27s;
+}
+.stagger-in > *:nth-child(10) {
+  animation-delay: 0.3s;
+}
+.stagger-in > *:nth-child(11) {
+  animation-delay: 0.33s;
+}
+.stagger-in > *:nth-child(12) {
+  animation-delay: 0.36s;
+}
+
+@keyframes staggerFade {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    box-shadow: var(--glow-accent-sm);
+  }
+  50% {
+    box-shadow: var(--glow-accent);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes borderGlow {
+  0%,
+  100% {
+    border-color: rgba(99, 102, 241, 0.35);
+  }
+  50% {
+    border-color: rgba(6, 182, 212, 0.5);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes ambientPulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes demoDotPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes badgePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.2), 0 0 10px rgba(99, 102, 241, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.45), 0 0 18px rgba(99, 102, 241, 0.5);
+  }
+}
+
+@keyframes badgeSettle {
+  0% {
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.2);
+  }
+}
+
+@keyframes reportMetricReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressGlow {
+  0% {
+    filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.55));
+  }
+  100% {
+    filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.4));
+  }
+}
+
+.is-pulsing {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.progress-bar span {
+  animation: progressGlow 2.5s ease-in-out infinite;
+  background: var(--gradient-accent) !important;
+  background-size: 200% 100% !important;
+}
+
+.skeleton-block {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(99, 102, 241, 0.12) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+.chat-typing span {
+  background: var(--color-accent) !important;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+}
+
+.chat-msg-enter-active,
+.chat-msg-leave-active {
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.chat-msg-enter-from,
+.chat-msg-leave-to {
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+}
+
+.chat-msg-move {
+  transition: transform 0.22s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-fade-enter-active,
+  .step-fade-leave-active,
+  .view-enter-active,
+  .view-leave-active,
+  .chat-msg-enter-active,
+  .chat-msg-leave-active {
+    transition-duration: 0.01ms !important;
+  }
+
+  .step-fade-enter-from,
+  .step-fade-leave-to,
+  .view-enter-from,
+  .view-leave-to,
+  .chat-msg-enter-from,
+  .chat-msg-leave-to {
+    transform: none !important;
+  }
+
+  .app-shell::before,
+  .demo-chip__dot,
+  .status-badge--pulse,
+  .progress-card.is-running,
+  .report-hero--winner,
+  .mission-control-panel--running,
+  .is-pulsing,
+  .chat-typing span {
+    animation: none !important;
+  }
+
+  .status-badge--settle {
+    animation: none !important;
+  }
+
+  .stagger-in > *,
+  .report-hero__metrics--reveal > * {
+    animation: none !important;
+  }
+
+  .progress-bar span {
+    animation: none !important;
+  }
+
+  .skeleton-block,
+  .rank-medal,
+  .home-journey__step,
+  .home-bento__tile,
+  .home-preview__node {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes ambientPulse {
+    from,
+    to {
+      opacity: 0.85;
+    }
+  }
+
+  @keyframes borderGlow {
+    from,
+    to {
+      border-color: var(--glass-border-glow);
+    }
+  }
+
+  @keyframes reportMetricReveal {
+    from,
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes staggerFade {
+    from,
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

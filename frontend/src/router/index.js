@@ -1,59 +1,69 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import Process from '../views/MainView.vue'
-import SimulationView from '../views/SimulationView.vue'
-import SimulationRunView from '../views/SimulationRunView.vue'
-import ReportView from '../views/ReportView.vue'
-import InteractionView from '../views/InteractionView.vue'
-import CampaignReportView from '../views/CampaignReportView.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import Home from "@/views/Home.vue";
+import Process from "@/views/Process.vue";
+import SimulationRunView from "@/views/SimulationRunView.vue";
+import Step4Report from "@/views/Step4Report.vue";
+import Step5Interaction from "@/views/Step5Interaction.vue";
+import HistoryDatabase from "@/views/HistoryDatabase.vue";
+import { useCampaignStore } from "@/stores/campaignStore";
 
 const routes = [
   {
-    path: '/',
-    name: 'Home',
-    component: Home
+    path: "/",
+    name: "home",
+    component: Home,
   },
   {
-    path: '/process/:projectId',
-    name: 'Process',
+    path: "/process",
+    name: "process",
     component: Process,
-    props: true
   },
   {
-    path: '/simulation/:simulationId',
-    name: 'Simulation',
-    component: SimulationView,
-    props: true
-  },
-  {
-    path: '/simulation/:simulationId/start',
-    name: 'SimulationRun',
+    path: "/simulation/:simulationId/run",
+    name: "simulation-run",
     component: SimulationRunView,
-    props: true
   },
   {
-    path: '/report/:reportId',
-    name: 'Report',
-    component: ReportView,
-    props: true
+    path: "/report/:reportId",
+    name: "report",
+    component: Step4Report,
   },
   {
-    path: '/interaction/:reportId',
-    name: 'Interaction',
-    component: InteractionView,
-    props: true
+    path: "/interaction/:simulationId",
+    name: "interaction",
+    component: Step5Interaction,
   },
   {
-    path: '/campaign/:campaignId/report',
-    name: 'CampaignReport',
-    component: CampaignReportView,
-    props: true
-  }
-]
+    path: "/history",
+    name: "history",
+    component: HistoryDatabase,
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
-})
+  routes,
+  scrollBehavior: () => ({ top: 0 }),
+});
 
-export default router
+router.beforeEach((to) => {
+  const store = useCampaignStore();
+  if (to.name === "simulation-run" && store.variants.length < 2) {
+    store.setNotice("Create at least two campaign variants before starting a simulation.");
+    return { name: "process" };
+  }
+
+  if (to.name === "report" && store.simulationRun.status !== "completed" && !store.report.data) {
+    store.setNotice("Run a simulation before opening the report.");
+    return { name: "process" };
+  }
+
+  if (to.name === "interaction" && (!store.report.data || store.personas.items.length === 0)) {
+    store.setNotice("Generate a report and personas before interviewing personas.");
+    return { name: "process" };
+  }
+
+  return true;
+});
+
+export default router;
