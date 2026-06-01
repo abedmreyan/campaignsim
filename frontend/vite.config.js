@@ -9,4 +9,17 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  server: {
+    port: 3004,
+    open: false,
+    host: true,
+    allowedHosts: ["v2.campaignsim.aethersystems.co", "localhost", "127.0.0.1"],
+    proxy: {
+      "/api": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
