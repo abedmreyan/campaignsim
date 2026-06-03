@@ -13,7 +13,7 @@ export default defineConfig({
     port: 3004,
     open: false,
     host: true,
-    allowedHosts: ["v2.campaignsim.aethersystems.co", "localhost", "127.0.0.1"],
+    allowedHosts: ["campaignsim-v2.aethersystems.co", "localhost", "127.0.0.1"],
     proxy: {
       "/api": {
         target: "http://localhost:5001",
