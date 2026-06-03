@@ -62,6 +62,7 @@ def create_app(config_class=Config):
     app.register_blueprint(evaluation_bp, url_prefix='/api/evaluation')
     
     @app.route('/health')
+    @app.route('/api/health')
     def health():
         return {'status': 'ok', 'service': 'CampaignSim Backend'}
     
