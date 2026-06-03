@@ -24,8 +24,8 @@ dependencies = [
     # OASIS social simulation
     "camel-oasis==0.2.5",
     "camel-ai==0.2.78",
-    # Pin torch to CPU-only build to avoid 3GB CUDA download
-    "torch>=2.0.0",
+    # torch: CPU-only on Linux (Docker); cap <2.4 for Intel Mac compatibility
+    "torch>=2.0.0,<2.3.0",
 
     # File processing
     "PyMuPDF>=1.24.0",
@@ -65,4 +65,7 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.uv.sources]
-torch = { index = "pytorch-cpu" }
+# Use CPU-only index on Linux (Docker); macOS PyPI torch is already CPU-only
+torch = [
+  { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+]
